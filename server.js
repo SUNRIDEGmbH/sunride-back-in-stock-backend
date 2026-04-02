@@ -119,6 +119,7 @@ async function checkBackInStock() {
 }
 
 // läuft alle 60 Sekunden
+console.log('Intervall für Back in Stock wurde gestartet');
 setInterval(checkBackInStock, 60000);
 
 const PORT = process.env.PORT || 3000;
