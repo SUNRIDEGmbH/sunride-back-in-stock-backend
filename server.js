@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+console.log('SHOPWARE_URL:', process.env.SHOPWARE_URL);
+console.log('SHOPWARE_ACCESS_KEY vorhanden:', !!process.env.SHOPWARE_ACCESS_KEY);
 console.log('RESEND KEY:', process.env.RESEND_API_KEY);
 const { Resend } = require('resend');
 
