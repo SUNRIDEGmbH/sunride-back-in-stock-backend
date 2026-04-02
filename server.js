@@ -7,31 +7,45 @@ console.log('RESEND KEY:', process.env.RESEND_API_KEY);
 const { Resend } = require('resend');
 
 async function fetchProductAvailability(productId) {
-  const response = await fetch(`${process.env.SHOPWARE_URL}/store-api/product/${productId}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      'sw-access-key': process.env.SHOPWARE_ACCESS_KEY,
-    },
-    body: JSON.stringify({
-      includes: {
-        product: ['id', 'availableStock', 'available'],
+  console.log('Prüfe Produkt bei Shopware:', productId);
+  console.log('Mit URL:', `${process.env.SHOPWARE_URL}/store-api/product/${productId}`);
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const response = await fetch(`${process.env.SHOPWARE_URL}/store-api/product/${productId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'sw-access-key': process.env.SHOPWARE_ACCESS_KEY,
       },
-    }),
-  });
+      body: JSON.stringify({
+        includes: {
+          product: ['id', 'availableStock', 'available'],
+        },
+      }),
+      signal: controller.signal,
+    });
 
-  const text = await response.text();
-  const data = text ? JSON.parse(text) : {};
+    const text = await response.text();
+    console.log('Shopware Status:', response.status);
+    console.log('Shopware Antwort:', text);
 
-  if (!response.ok) {
-    throw new Error(data?.errors?.[0]?.detail || 'Produkt konnte nicht geprüft werden.');
+    const data = text ? JSON.parse(text) : {};
+
+    if (!response.ok) {
+      throw new Error(data?.errors?.[0]?.detail || 'Produkt konnte nicht geprüft werden.');
+    }
+
+    return {
+      available: Boolean(data?.available),
+      availableStock: Number(data?.availableStock || 0),
+    };
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return {
-    available: Boolean(data?.available),
-    availableStock: Number(data?.availableStock || 0),
-  };
 }
 
 const app = express();
