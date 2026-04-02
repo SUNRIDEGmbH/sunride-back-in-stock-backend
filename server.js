@@ -60,7 +60,7 @@ let requests = [];
 
 app.post('/back-in-stock', async (req, res) => {
   try {
-    const { email, productId, productName } = req.body;
+    const { email, productId, productName, productImage, productUrl } = req.body;
 
     if (!email || !productId) {
       return res.status(400).json({
@@ -88,17 +88,13 @@ app.post('/back-in-stock', async (req, res) => {
       email: normalizedEmail,
       productId,
       productName,
-      productImage: req.body.productImage || '',
-      productUrl: req.body.productUrl || '',
+      productImage: productImage || '',
+      productUrl: productUrl || '',
       createdAt: new Date(),
       notified: false,
     });
 
-    console.log('Neue Anfrage:', {
-      email: normalizedEmail,
-      productId,
-      productName,
-    });
+    console.log('Gespeicherter Request:', requests[requests.length - 1]);
 
     res.json({ success: true });
   } catch (error) {
