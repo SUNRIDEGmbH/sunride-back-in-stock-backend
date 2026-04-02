@@ -4,6 +4,34 @@ require('dotenv').config();
 console.log('RESEND KEY:', process.env.RESEND_API_KEY);
 const { Resend } = require('resend');
 
+async function fetchProductAvailability(productId) {
+  const response = await fetch(`${process.env.SHOPWARE_URL}/store-api/product/${productId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      'sw-access-key': process.env.SHOPWARE_ACCESS_KEY,
+    },
+    body: JSON.stringify({
+      includes: {
+        product: ['id', 'availableStock', 'available'],
+      },
+    }),
+  });
+
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : {};
+
+  if (!response.ok) {
+    throw new Error(data?.errors?.[0]?.detail || 'Produkt konnte nicht geprüft werden.');
+  }
+
+  return {
+    available: Boolean(data?.available),
+    availableStock: Number(data?.availableStock || 0),
+  };
+}
+
 const app = express();
 
 app.use(cors());
@@ -93,7 +121,9 @@ async function checkBackInStock() {
     if (entry.notified) continue;
 
     try {
-      const isAvailable = true;
+      const { available, availableStock } = await fetchProductAvailability(entry.productId);
+
+      const isAvailable = available && availableStock > 0;
 
       if (!isAvailable) continue;
 
