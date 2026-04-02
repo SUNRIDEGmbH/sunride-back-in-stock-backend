@@ -72,6 +72,8 @@ app.post('/back-in-stock', async (req, res) => {
       email: normalizedEmail,
       productId,
       productName,
+      productImage: req.body.productImage || '',
+      productUrl: req.body.productUrl || '',
       createdAt: new Date(),
       notified: false,
     });
@@ -128,16 +130,47 @@ async function checkBackInStock() {
       if (!isAvailable) continue;
 
       await resend.emails.send({
-        from: 'onboarding@resend.dev',
-        to: entry.email,
-        subject: 'Dein gewünschter Artikel ist wieder verfügbar',
-        html: `
-          <h2>Gute Nachrichten</h2>
-          <p>Dein gewünschter Artikel ist wieder verfügbar.</p>
-          <p><strong>${entry.productName || 'Produkt'}</strong></p>
-          <p>Jetzt schnell sichern.</p>
-        `,
-      });
+  from: 'onboarding@resend.dev',
+  to: entry.email,
+  subject: `${entry.productName || 'Dein gewünschter Artikel'} ist wieder verfügbar`,
+  html: `
+    <div style="font-family: Arial, sans-serif; background: #f7f7f7; padding: 32px 16px;">
+      <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 18px; overflow: hidden; border: 1px solid #ececec;">
+        ${
+          entry.productImage
+            ? `<img src="${entry.productImage}" alt="${entry.productName || 'Produkt'}" style="width: 100%; display: block; background: #fafafa;" />`
+            : ''
+        }
+
+        <div style="padding: 28px 24px;">
+          <p style="margin: 0 0 10px; font-size: 13px; letter-spacing: 0.4px; color: #8a8a8a; text-transform: uppercase;">
+            Sunride
+          </p>
+
+          <h1 style="margin: 0 0 14px; font-size: 24px; line-height: 1.3; color: #111111;">
+            Dein gewünschter Artikel ist wieder verfügbar
+          </h1>
+
+          <p style="margin: 0 0 18px; font-size: 16px; line-height: 1.6; color: #4b5563;">
+            Gute Nachrichten. Der Artikel <strong>${entry.productName || 'Dein gewünschtes Produkt'}</strong> ist ab sofort wieder erhältlich.
+          </p>
+
+          ${
+            entry.productUrl
+              ? `<a href="${entry.productUrl}" style="display: inline-block; background: #111111; color: #ffffff; text-decoration: none; padding: 14px 22px; border-radius: 12px; font-size: 15px; font-weight: 700;">
+                  Jetzt zum Produkt
+                </a>`
+              : ''
+          }
+
+          <p style="margin: 22px 0 0; font-size: 13px; line-height: 1.6; color: #8a8a8a;">
+            Diese Benachrichtigung wurde einmalig versendet.
+          </p>
+        </div>
+      </div>
+    </div>
+  `,
+});
 
       entry.notified = true;
 
