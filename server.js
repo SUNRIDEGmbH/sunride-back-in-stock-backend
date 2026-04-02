@@ -11,7 +11,7 @@ app.use(express.json());
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Speicher (später ersetzen wir das durch Datenbank)
+// Speicher, später durch Datenbank ersetzen
 let requests = [];
 
 app.post('/back-in-stock', async (req, res) => {
@@ -48,10 +48,15 @@ app.post('/back-in-stock', async (req, res) => {
       notified: false,
     });
 
-    console.log('Neue Anfrage:', { email, productId, productName });
+    console.log('Neue Anfrage:', {
+      email: normalizedEmail,
+      productId,
+      productName,
+    });
 
     res.json({ success: true });
   } catch (error) {
+    console.error('Fehler beim Speichern:', error);
     res.status(500).json({
       message: 'Fehler beim Speichern',
     });
@@ -78,6 +83,43 @@ app.get('/test-mail', async (req, res) => {
     });
   }
 });
+
+async function checkBackInStock() {
+  if (!requests.length) return;
+
+  console.log('Prüfe Verfügbarkeiten...');
+
+  for (const entry of requests) {
+    if (entry.notified) continue;
+
+    try {
+      const isAvailable = true;
+
+      if (!isAvailable) continue;
+
+      await resend.emails.send({
+        from: 'onboarding@resend.dev',
+        to: entry.email,
+        subject: 'Dein gewünschter Artikel ist wieder verfügbar',
+        html: `
+          <h2>Gute Nachrichten</h2>
+          <p>Dein gewünschter Artikel ist wieder verfügbar.</p>
+          <p><strong>${entry.productName || 'Produkt'}</strong></p>
+          <p>Jetzt schnell sichern.</p>
+        `,
+      });
+
+      entry.notified = true;
+
+      console.log('Mail gesendet an:', entry.email);
+    } catch (error) {
+      console.error('Fehler beim Versand:', error);
+    }
+  }
+}
+
+// läuft alle 60 Sekunden
+setInterval(checkBackInStock, 60000);
 
 const PORT = process.env.PORT || 3000;
 
