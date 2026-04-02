@@ -40,8 +40,8 @@ async function fetchProductAvailability(productId) {
     }
 
     return {
-      available: Boolean(data?.available),
-      availableStock: Number(data?.availableStock || 0),
+      available: Boolean(data?.product?.available),
+      availableStock: Number(data?.product?.availableStock || 0),
     };
   } finally {
     clearTimeout(timeout);
